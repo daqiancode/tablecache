@@ -53,23 +53,20 @@ type Base struct {
 	// DeletedAt sql.NullTime `gorm:"index"`
 }
 
-func (s Base) GetID() uint64 {
-	return s.ID
-}
-
 type User struct {
 	Base
 	Name string `gorm:"type:varchar(100) not null;"`
 }
 
-// var tables = []interface{}{
-// 	&User{},
-// }
+var tables = []interface{}{
+	&User{},
+}
 
 func (s *TableCacheTest) SetupTest() {
-	rg := tablecache.NewRedisGorm(GetRedis(), GetMysql(), 3*time.Minute, "ID", "test",
+	redisGorm := tablecache.NewRedisGorm(GetRedis(), GetMysql(), 3*time.Minute, "ID", "test",
 		func() interface{} { return &User{} }, func() interface{} { return &([]User{}) })
-	s.users = tablecache.NewTableCache(rg, "User", [][]string{{"Name"}})
+	redisGorm.GetDB().AutoMigrate(tables)
+	s.users = tablecache.NewTableCache(redisGorm, "User", [][]string{{"Name"}})
 }
 
 func (s *TableCacheTest) TestGet() {
