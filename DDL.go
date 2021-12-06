@@ -145,7 +145,7 @@ type FKInfo struct {
 	OnUpdate   FKAction
 }
 
-// tag:  Table , on delete , on update
+// tag: eg. FK:User,CASCADE,CASCADE  Table,on delete %s,on update %s
 func (s *DDL) ParseFKInfo(tag string) FKInfo {
 	parts := strings.Split(tag, ",")
 	r := FKInfo{}
