@@ -169,3 +169,7 @@ func ToStringSlice(a interface{}) []string {
 	}
 	return r
 }
+
+func isSlice(value interface{}) bool {
+	return reflect.Indirect(reflect.ValueOf(value)).Kind() == reflect.Slice
+}

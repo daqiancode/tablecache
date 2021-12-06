@@ -221,9 +221,6 @@ func (s *TableCache) Get(id interface{}) (interface{}, error) {
 	return r1, err
 }
 
-func (s *TableCache) isSlice(value interface{}) bool {
-	return reflect.Indirect(reflect.ValueOf(value)).Kind() == reflect.Slice
-}
 func (s *TableCache) hasNilInSlices(values []interface{}) bool {
 	for _, v := range values {
 		if v == nil {
@@ -397,7 +394,7 @@ func (s *TableCache) Save(valueRef interface{}) error {
 //Delete by id , eg. Delete(1,2)
 func (s *TableCache) Delete(ids ...interface{}) error {
 	var args interface{} = ids
-	if len(ids) == 1 && s.isSlice(ids[0]) {
+	if len(ids) == 1 && isSlice(ids[0]) {
 		args = ids[0]
 	}
 	var old []map[string]interface{}
@@ -443,7 +440,7 @@ func (s *TableCache) ClearCache(objs ...interface{}) error {
 		return nil
 	}
 	var args interface{} = objs
-	if len(objs) == 1 && s.isSlice(objs[0]) {
+	if len(objs) == 1 && isSlice(objs[0]) {
 		args = objs[0]
 	}
 	objsV := reflect.Indirect(reflect.ValueOf(args))
