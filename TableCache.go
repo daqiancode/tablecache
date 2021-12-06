@@ -86,23 +86,23 @@ func (s *TableCache) cacheGetByID(id interface{}) (interface{}, bool, error) {
 	return r, true, nil
 }
 
-func (s *TableCache) cacheSetByID(value interface{}, id interface{}) error {
-	if id == 0 {
-		id = s.GetID(value).(uint64)
-	} else {
-		redisKey := s.getIDRedisKey(id)
-		if s.cacheUtil.GetFieldValue(value, s.idField) != id {
-			s.redisClient.Set(s.redisCtx, redisKey, NullStr, s.ttl)
-			return nil
-		}
-	}
-	redisKey := s.getIDRedisKey(id)
-	jsonStr, err := s.marshaller.Marshal(value)
-	if err != nil {
-		return err
-	}
-	return s.redisClient.Set(s.redisCtx, redisKey, jsonStr, s.ttl).Err()
-}
+// func (s *TableCache) cacheSetByID(value interface{}, id interface{}) error {
+// 	if id == 0 {
+// 		id = s.GetID(value).(uint64)
+// 	} else {
+// 		redisKey := s.getIDRedisKey(id)
+// 		if s.cacheUtil.GetFieldValue(value, s.idField) != id {
+// 			s.redisClient.Set(s.redisCtx, redisKey, NullStr, s.ttl)
+// 			return nil
+// 		}
+// 	}
+// 	redisKey := s.getIDRedisKey(id)
+// 	jsonStr, err := s.marshaller.Marshal(value)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	return s.redisClient.Set(s.redisCtx, redisKey, jsonStr, s.ttl).Err()
+// }
 
 func (s *TableCache) cacheGet(valueRef interface{}, key string) (interface{}, bool, error) {
 	jsonStr, err := s.redisClient.Get(s.redisCtx, key).Result()
@@ -220,6 +220,10 @@ func (s *TableCache) Get(id interface{}) (interface{}, error) {
 	err = s.cacheSet(r1, key)
 	return r1, err
 }
+
+func (s *TableCache) isSlice(value interface{}) bool {
+	return reflect.Indirect(reflect.ValueOf(value)).Kind() == reflect.Slice
+}
 func (s *TableCache) hasNilInSlices(values []interface{}) bool {
 	for _, v := range values {
 		if v == nil {
@@ -279,11 +283,7 @@ func (s *TableCache) List(ids interface{}) (interface{}, error) {
 		}
 		goodIds = append(goodIds, id)
 	}
-
 	badIds := SubStrs(ToStringSlice(ids), ToStringSlice(goodIds))
-
-	fmt.Println(badIds, goodIds, ids)
-
 	for _, v := range badIds {
 		key = s.getIDRedisKey(v)
 		s.cacheSet(nil, key)
@@ -396,14 +396,18 @@ func (s *TableCache) Save(valueRef interface{}) error {
 
 //Delete by id , eg. Delete(1,2)
 func (s *TableCache) Delete(ids ...interface{}) error {
+	var args interface{} = ids
+	if len(ids) == 1 && s.isSlice(ids[0]) {
+		args = ids[0]
+	}
 	var old []map[string]interface{}
 	m := s.FactorySingleRef()
-	err := s.db.Model(m).Where(ids).Find(&old).Error
+	err := s.db.Model(m).Where(args).Find(&old).Error
 	if err != nil {
 		return err
 	}
 
-	err = s.db.Delete(m, ids).Error
+	err = s.db.Delete(m, args).Error
 	if err != nil {
 		return err
 	}
@@ -438,7 +442,11 @@ func (s *TableCache) ClearCache(objs ...interface{}) error {
 	if len(objs) == 0 {
 		return nil
 	}
-	objsV := reflect.Indirect(reflect.ValueOf(objs))
+	var args interface{} = objs
+	if len(objs) == 1 && s.isSlice(objs[0]) {
+		args = objs[0]
+	}
+	objsV := reflect.Indirect(reflect.ValueOf(args))
 	n := objsV.Len()
 	m := n*(len(s.Indexes)+1) + 1
 	var keySet map[string]bool = make(map[string]bool, m)

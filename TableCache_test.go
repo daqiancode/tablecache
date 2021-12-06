@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -65,7 +66,7 @@ var tables = []interface{}{
 func (s *TableCacheTest) SetupTest() {
 	redisGorm := tablecache.NewRedisGorm(GetRedis(), GetMysql(), 3*time.Minute, "ID", "test",
 		func() interface{} { return &User{} }, func() interface{} { return &([]User{}) })
-	redisGorm.GetDB().AutoMigrate(tables)
+	redisGorm.GetDB().AutoMigrate(tables...)
 	s.users = tablecache.NewTableCache(redisGorm, "User", [][]string{{"Name"}})
 }
 
@@ -134,7 +135,16 @@ func (s *TableCacheTest) TestDelete() {
 	s.Nil(err)
 	err = s.users.Delete(25, 26)
 	s.Nil(err)
+	err = s.users.Delete([]uint64{25, 26})
+	s.Nil(err)
 	fmt.Println(s.users.Get(25))
+}
+
+var a []interface{}
+
+func (s *TableCacheTest) TestIsSlice() {
+	v := reflect.Indirect(reflect.ValueOf(&a))
+	fmt.Println(v.Type().Kind())
 }
 
 func TestTableCacheTest(t *testing.T) {
