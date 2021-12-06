@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
@@ -138,13 +137,6 @@ func (s *TableCacheTest) TestDelete() {
 	err = s.users.Delete([]uint64{25, 26})
 	s.Nil(err)
 	fmt.Println(s.users.Get(25))
-}
-
-var a []interface{}
-
-func (s *TableCacheTest) TestIsSlice() {
-	v := reflect.Indirect(reflect.ValueOf(&a))
-	fmt.Println(v.Type().Kind())
 }
 
 func TestTableCacheTest(t *testing.T) {
