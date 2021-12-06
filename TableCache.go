@@ -486,3 +486,19 @@ func (s *TableCache) ClearCacheWithMaps(objs ...map[string]interface{}) error {
 	}
 	return s.redisClient.Del(s.redisCtx, rkeys...).Err()
 }
+
+func (s *TableCache) DeleteUint64s(ids []uint64) error {
+	args := make([]interface{}, len(ids))
+	for i, v := range ids {
+		args[i] = v
+	}
+	return s.Delete(ids)
+}
+
+func (s *TableCache) DeleteStrs(ids []string) error {
+	args := make([]interface{}, len(ids))
+	for i, v := range ids {
+		args[i] = v
+	}
+	return s.Delete(ids)
+}
